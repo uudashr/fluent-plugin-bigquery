@@ -45,7 +45,7 @@ module Fluent
       def configure_for_load(conf)
         raise ConfigError unless conf["method"] == "load"
 
-        buffer_config = conf.elements("buffer")
+        buffer_config = conf.elements("buffer")[0]
         return unless buffer_config
         buffer_config["@type"]                       = "file"        unless buffer_config["@type"]
         buffer_config["flush_mode"]                  = :interval     unless buffer_config["flush_mode"]
@@ -421,7 +421,7 @@ module Fluent
 
       module LoadImplementation
         def _write(chunk, table_id_format, _)
-          table_id = extract_placeholders(table_id_format, chunk)
+          table_id = extract_placeholders(table_id_format, chunk.metadata)
           load(chunk, table_id)
         end
 
@@ -451,7 +451,7 @@ module Fluent
         private
 
         def create_upload_source(chunk)
-          chunk_is_file = @buffer_type == 'file'
+          chunk_is_file = @buffer_config["@type"] == 'file'
           if chunk_is_file
             File.open(chunk.path) do |file|
               yield file
