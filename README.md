@@ -43,8 +43,6 @@ OAuth flow for installed applications.
 | field_float                            | string        | no                          | nil                                                    | see examples.                                                                                                        |
 | field_boolean                          | string        | no                          | nil                                                    | see examples.                                                                                                        |
 | field_timestamp                        | string        | no                          | nil                                                    | see examples.                                                                                                        |
-| time_field                             | string        | no                          | nil                                                    | If this param is set, plugin set formatted time string to this field.                                                |
-| time_format                            | string        | no                          | nil                                                    | ex. `%s`, `%Y/%m%d %H:%M:%S`                                                                                         |
 | replace_record_key                     | bool          | no                          | false                                                  | see examples.                                                                                                        |
 | replace_record_key_regexp{1-10}        | string        | no                          | nil                                                    | see examples.                                                                                                        |
 | convert_hash_to_json                   | bool          | no                          | false                                                  | If true, converts Hash value of record to JSON String.                                                               |
@@ -69,6 +67,34 @@ And, other params (defined by base class) are available
 
 see. https://github.com/fluent/fluentd/blob/master/lib/fluent/plugin/output.rb
 
+### Inject section
+
+It is replacement of previous version `time_field` and `time_format`.
+
+For example.
+
+```
+<inject>
+  time_key time_field_name
+  time_type string
+  time_format %Y-%m-%d %H:%M:%S
+</inject>
+```
+
+| name                                   | type          | required?    | default                    | description              |
+| :------------------------------------- | :------------ | :----------- | :------------------------- | :----------------------- |
+| hostname_key                           | string        | no           | nil                        |                          |
+| hostname                               | string        | no           | nil                        |                          |
+| tag_key                                | string        | no           | nil                        |                          |
+| time_key                               | string        | no           | nil                        |                          |
+| time_type                              | string        | no           | nil                        |                          |
+| time_format                            | string        | no           | nil                        |                          |
+| localtime                              | bool          | no           | true                       |                          |
+| utc                                    | bool          | no           | false                      |                          |
+| timezone                               | string        | no           | nil                        |                          |
+
+see. https://github.com/fluent/fluentd/blob/master/lib/fluent/plugin_helper/inject.rb
+
 ## Examples
 
 ### Streaming inserts
@@ -89,9 +115,6 @@ Configure insert specifications with target table schema, with your credentials.
   project yourproject_id
   dataset yourdataset_id
   table   tablename
-  
-  time_format %s
-  time_field  time
   
   field_integer time,status,bytes
   field_string  rhost,vhost,path,method,protocol,agent,referer
@@ -124,9 +147,6 @@ For high rate inserts over streaming inserts, you should specify flush intervals
   project yourproject_id
   dataset yourdataset_id
   tables  accesslog1,accesslog2,accesslog3
-  
-  time_format %s
-  time_field  time
   
   field_integer time,status,bytes
   field_string  rhost,vhost,path,method,protocol,agent,referer
@@ -181,9 +201,6 @@ section in the Google BigQuery document.
 
   auth_method json_key
   json_key json_key_path.json
-
-  time_format %s
-  time_field  time
 
   project yourproject_id
   dataset yourdataset_id
@@ -261,9 +278,6 @@ Compute Engine instance, then you can configure fluentd like this.
   project yourproject_id
   dataset yourdataset_id
   table   tablename
-  
-  time_format %s
-  time_field  time
   
   field_integer time,status,bytes
   field_string  rhost,vhost,path,method,protocol,agent,referer
@@ -401,9 +415,6 @@ you can also specify nested fields by prefixing their belonging record fields.
   
   ...
   
-  time_format %s
-  time_field  time
-  
   field_integer time,response.status,response.bytes
   field_string  request.vhost,request.path,request.method,request.protocol,request.agent,request.referer,remote.host,remote.ip,remote.user
   field_float   request.time
@@ -440,9 +451,6 @@ The second method is to specify a path to a BigQuery schema file instead of list
   
   ...
   
-  time_format %s
-  time_field  time
-  
   schema_path /path/to/httpd.schema
   field_integer time
 </match>
@@ -456,9 +464,6 @@ The third method is to set `fetch_schema` to `true` to enable fetch a schema usi
   @type bigquery
   
   ...
-  
-  time_format %s
-  time_field  time
   
   fetch_schema true
   # fetch_schema_table other_table # if you want to fetch schema from other table

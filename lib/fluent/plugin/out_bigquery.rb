@@ -10,7 +10,7 @@ module Fluent
     class BigQueryOutput < Output
       Fluent::Plugin.register_output('bigquery', self)
 
-      helpers :event_emitter
+      helpers :inject, :event_emitter
 
       # https://developers.google.com/bigquery/browser-tool-quickstart
       # https://developers.google.com/bigquery/bigquery-api-quickstart
@@ -110,9 +110,6 @@ module Fluent
       (1..REGEXP_MAX_NUM).each {|i| config_param :"replace_record_key_regexp#{i}", :string, default: nil }
 
       config_param :convert_hash_to_json, :bool, default: false
-
-      config_param :time_format, :string, default: nil
-      config_param :time_field, :string, default: nil
 
       # insert_id_field (only insert)
       config_param :insert_id_field, :string, default: nil
@@ -231,19 +228,6 @@ module Fluent
           @regexps[regexp] = replacement
         end
 
-        @timef = TimeFormatter.new(@time_format, !@buffer_config.timekey_use_utc, @buffer_config.timekey_zone)
-
-        if @time_field
-          keys = @time_field.split('.')
-          last_key = keys.pop
-          @add_time_field = ->(record, time) {
-            keys.inject(record) { |h, k| h[k] ||= {} }[last_key] = @timef.format(time)
-            record
-          }
-        else
-          @add_time_field = ->(record, time) { record }
-        end
-
         if @insert_id_field
           insert_id_keys = @insert_id_field.split('.')
           @get_insert_id = ->(record) {
@@ -306,8 +290,10 @@ module Fluent
           record = convert_hash_to_json(record)
         end
 
+        record = inject_values_to_record(tag, time, record)
+
         buf = String.new
-        row = @fields.format(@add_time_field.call(record, time))
+        row = @fields.format(record)
         unless row.empty?
           buf << MultiJson.dump(row) + "\n"
         end
